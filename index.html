@@ -16,12 +16,12 @@
                 <i class="fa-solid fa-graduation-cap text-yellow-400 text-3xl"></i>
                 <span class="text-2xl font-extrabold tracking-wide">ExamSuccès</span>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
                 <div class="bg-yellow-400 text-indigo-900 font-bold px-3 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 shadow">
                     <i class="fa-solid fa-tag"></i> Dépôt min : 100 FCFA
                 </div>
-                <button type="button" onclick="openAdminModal()" class="bg-indigo-900 hover:bg-indigo-950 text-indigo-100 text-xs sm:text-sm px-3.5 py-2 rounded-lg font-semibold flex items-center gap-1.5 shadow border border-indigo-500/30 cursor-pointer">
-                    <i class="fa-solid fa-lock text-yellow-400"></i> Espace Admin
+                <button type="button" onclick="openAdminModal()" class="hover:text-yellow-300 text-indigo-200 text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition">
+                    <i class="fa-solid fa-gear"></i> Configuration
                 </button>
             </div>
         </div>
@@ -167,7 +167,7 @@
         </div>
     </div>
 
-    <!-- MODAL ESPACE ADMIN -->
+    <!-- MODAL CONFIGURATION / ADMIN -->
     <div id="adminModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button type="button" onclick="closeModal('adminModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
@@ -177,8 +177,8 @@
                     <i class="fa-solid fa-folder-plus text-xl"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-slate-800">Espace Administrateur</h3>
-                    <p class="text-xs text-slate-500">Ajouter une épreuve au catalogue</p>
+                    <h3 class="text-lg font-bold text-slate-800">Gestion du Catalogue</h3>
+                    <p class="text-xs text-slate-500">Ajouter une épreuve ou corrigé</p>
                 </div>
             </div>
 
@@ -308,4 +308,8 @@
                         </div>
                     </div>
                 `;
-                container.inner
+                container.innerHTML += card;
+            });
+        }
+
+        function filterDocs
