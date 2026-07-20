@@ -11,17 +11,17 @@
 
     <!-- HEADER -->
     <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center flex-wrap gap-2">
             <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-graduation-cap text-yellow-400 text-3xl"></i>
-                <span class="text-2xl font-extrabold tracking-wide">ExamSuccès</span>
+                <i class="fa-solid fa-graduation-cap text-yellow-400 text-2xl sm:text-3xl"></i>
+                <span class="text-xl sm:text-2xl font-extrabold tracking-wide">ExamSuccès</span>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="bg-yellow-400 text-indigo-900 font-bold px-3 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1 shadow">
-                    <i class="fa-solid fa-tag"></i> Dépôt min : 100 FCFA
+            <div class="flex items-center gap-2 sm:gap-4">
+                <div class="bg-yellow-400 text-indigo-900 font-bold px-2.5 py-1 rounded-full text-[11px] sm:text-sm flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-tag"></i> Dépôt min : 100 F
                 </div>
-                <button type="button" onclick="openAdminModal()" class="hover:text-yellow-300 text-indigo-200 text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition">
-                    <i class="fa-solid fa-gear"></i> Configuration
+                <button type="button" onclick="openAdminModal()" class="hover:text-yellow-300 text-indigo-200 text-base sm:text-lg p-1 font-semibold flex items-center gap-1 cursor-pointer transition" title="Configuration">
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
         </div>
@@ -172,73 +172,97 @@
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button type="button" onclick="closeModal('adminModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
             
-            <div class="flex items-center gap-2 mb-4">
-                <div class="bg-indigo-100 text-indigo-700 p-2 rounded-lg">
-                    <i class="fa-solid fa-folder-plus text-xl"></i>
+            <!-- Étape 1 : Authentification par mot de passe -->
+            <div id="adminAuthSection" class="space-y-4">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="bg-indigo-100 text-indigo-700 p-3 rounded-xl">
+                        <i class="fa-solid fa-lock text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Espace Configuration</h3>
+                        <p class="text-xs text-slate-500">Saisissez votre code d'accès</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800">Gestion du Catalogue</h3>
-                    <p class="text-xs text-slate-500">Ajouter une épreuve ou corrigé</p>
-                </div>
+                <form onsubmit="verifyAdminPassword(event)" class="space-y-3">
+                    <div>
+                        <input type="password" id="adminPassInput" required placeholder="Entrez le mot de passe" class="w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition">
+                        Valider
+                    </button>
+                </form>
             </div>
 
-            <form onsubmit="addNewDoc(event)" class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Titre de l'épreuve</label>
-                    <input type="text" id="adminTitle" required placeholder="Ex: Mathématiques BAC D 2023" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Niveau & Série</label>
-                        <select id="adminLevel" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                            <option value="CEP">CEP / Primaire</option>
-                            <option value="6ème">6ème</option>
-                            <option value="5ème">5ème</option>
-                            <option value="4ème">4ème</option>
-                            <option value="BEPC">3ème / BEPC</option>
-                            <option value="2nde A">2nde A</option>
-                            <option value="2nde C">2nde C</option>
-                            <option value="1ère A">1ère A1 / A2</option>
-                            <option value="1ère B">1ère B</option>
-                            <option value="1ère C">1ère C</option>
-                            <option value="1ère D">1ère D</option>
-                            <option value="BAC A">BAC A1 / A2</option>
-                            <option value="BAC B">BAC B</option>
-                            <option value="BAC C">BAC C</option>
-                            <option value="BAC D">BAC D</option>
-                            <option value="BAC E">BAC E</option>
-                            <option value="BAC F">BAC F (F1, F2, F3, F4)</option>
-                            <option value="BAC G">BAC G (G1, G2, G3)</option>
-                            <option value="Université">Université</option>
-                        </select>
+            <!-- Étape 2 : Formulaire d'ajout -->
+            <div id="adminContentSection" class="hidden space-y-3">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="bg-indigo-100 text-indigo-700 p-2 rounded-lg">
+                        <i class="fa-solid fa-folder-plus text-xl"></i>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Matière</label>
-                        <input type="text" id="adminSubject" required placeholder="Ex: Mathématiques" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <h3 class="text-lg font-bold text-slate-800">Gestion du Catalogue</h3>
+                        <p class="text-xs text-slate-500">Ajouter une épreuve ou un corrigé</p>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Année</label>
-                    <input type="number" id="adminYear" value="2024" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-
-                <div class="border-t pt-2 space-y-2">
+                <form onsubmit="addNewDoc(event)" class="space-y-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Lien PDF du Sujet (Épreuve)</label>
-                        <input type="url" id="adminSubjectUrl" placeholder="https://exemple.com/sujet.pdf" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Titre de l'épreuve</label>
+                        <input type="text" id="adminTitle" required placeholder="Ex: Mathématiques BAC D 2023" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Lien PDF du Corrigé Type</label>
-                        <input type="url" id="adminCorrUrl" placeholder="https://exemple.com/corrige.pdf" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                </div>
 
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition flex justify-center items-center gap-2 mt-2">
-                    <i class="fa-solid fa-plus-circle"></i> Ajouter au catalogue
-                </button>
-            </form>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Niveau & Série</label>
+                            <select id="adminLevel" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                                <option value="CEP">CEP / Primaire</option>
+                                <option value="6ème">6ème</option>
+                                <option value="5ème">5ème</option>
+                                <option value="4ème">4ème</option>
+                                <option value="BEPC">3ème / BEPC</option>
+                                <option value="2nde A">2nde A</option>
+                                <option value="2nde C">2nde C</option>
+                                <option value="1ère A">1ère A1 / A2</option>
+                                <option value="1ère B">1ère B</option>
+                                <option value="1ère C">1ère C</option>
+                                <option value="1ère D">1ère D</option>
+                                <option value="BAC A">BAC A1 / A2</option>
+                                <option value="BAC B">BAC B</option>
+                                <option value="BAC C">BAC C</option>
+                                <option value="BAC D">BAC D</option>
+                                <option value="BAC E">BAC E</option>
+                                <option value="BAC F">BAC F (F1, F2, F3, F4)</option>
+                                <option value="BAC G">BAC G (G1, G2, G3)</option>
+                                <option value="Université">Université</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Matière</label>
+                            <input type="text" id="adminSubject" required placeholder="Ex: Mathématiques" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Année</label>
+                        <input type="number" id="adminYear" value="2024" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <div class="border-t pt-2 space-y-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Lien PDF du Sujet (Épreuve)</label>
+                            <input type="url" id="adminSubjectUrl" placeholder="https://exemple.com/sujet.pdf" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Lien PDF du Corrigé Type</label>
+                            <input type="url" id="adminCorrUrl" placeholder="https://exemple.com/corrige.pdf" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition flex justify-center items-center gap-2 mt-2">
+                        <i class="fa-solid fa-plus-circle"></i> Ajouter au catalogue
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -287,29 +311,4 @@
                                 <span class="text-xs font-bold px-2.5 py-1 rounded-full ${
                                     doc.level.includes('BAC') ? 'bg-red-100 text-red-700' :
                                     doc.level === 'BEPC' ? 'bg-blue-100 text-blue-700' :
-                                    doc.level === 'CEP' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'
-                                }">${doc.level}</span>
-                                <span class="text-xs text-slate-400 font-semibold">${doc.year}</span>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-base mb-1 leading-snug">${doc.title}</h3>
-                            <p class="text-xs text-slate-500 mb-4"><i class="fa-solid fa-book-open mr-1"></i>${doc.subject}</p>
-                        </div>
-
-                        <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <span class="font-extrabold text-indigo-700 text-xs bg-indigo-50 px-2 py-1 rounded border border-indigo-100">Dépôt min: 100 F</span>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="deleteDoc(${doc.id})" title="Supprimer" class="text-slate-300 hover:text-red-500 p-1">
-                                    <i class="fa-solid fa-trash-can text-sm"></i>
-                                </button>
-                                <button type="button" onclick="openPaymentModal(${doc.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition flex items-center gap-1 shadow-sm">
-                                    <i class="fa-solid fa-download"></i> Obtenir
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.innerHTML += card;
-            });
-        }
-
-        function filterDocs
+                                    doc.level === 'CEP' ? 'bg-amber-100 text-amber-
