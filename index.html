@@ -11,116 +11,78 @@
 
     <!-- HEADER -->
     <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center flex-wrap gap-2">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-graduation-cap text-yellow-400 text-2xl sm:text-3xl"></i>
-                <span class="text-xl sm:text-2xl font-extrabold tracking-wide">ExamSuccès</span>
+                <i class="fa-solid fa-graduation-cap text-yellow-400 text-2xl"></i>
+                <span class="text-xl font-extrabold tracking-wide">ExamSuccès</span>
             </div>
-            <div class="flex items-center gap-2 sm:gap-4">
-                <div class="bg-yellow-400 text-indigo-900 font-bold px-2.5 py-1 rounded-full text-[11px] sm:text-sm flex items-center gap-1 shadow">
-                    <i class="fa-solid fa-tag"></i> Dépôt min : 100 F
-                </div>
-                <button type="button" onclick="openAdminModal()" class="hover:text-yellow-300 text-indigo-200 text-base sm:text-lg p-1 font-semibold flex items-center gap-1 cursor-pointer transition" title="Configuration">
-                    <i class="fa-solid fa-gear"></i>
-                </button>
-            </div>
+            
+            <!-- BOUTON + POUR AJOUTER/CONFIGURER -->
+            <button type="button" onclick="openAdminModal()" class="bg-yellow-400 hover:bg-yellow-300 text-indigo-950 font-bold w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md transition active:scale-95">
+                <i class="fa-solid fa-plus"></i>
+            </button>
         </div>
     </header>
 
     <!-- HERO -->
-    <section class="bg-gradient-to-r from-indigo-800 to-purple-700 text-white py-10 px-4 text-center">
+    <section class="bg-gradient-to-r from-indigo-800 to-purple-700 text-white py-8 px-4 text-center">
         <div class="max-w-3xl mx-auto">
-            <h1 class="text-3xl md:text-4xl font-extrabold mb-3">Banque d'Épreuves et Corrigés Types</h1>
-            <p class="text-indigo-100 text-base mb-6">Effectuez un dépôt libre (minimum <span class="text-yellow-300 font-bold">100 FCFA</span>) sur nos numéros pour télécharger vos documents.</p>
-            <div class="flex flex-wrap justify-center gap-3 text-xs md:text-sm font-semibold">
-                <span class="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20">
-                    <i class="fa-solid fa-file-pdf text-yellow-400 mr-1.5"></i>Épreuve & Corrigé Type
-                </span>
-                <span class="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20">
-                    <i class="fa-solid fa-wallet text-yellow-400 mr-1.5"></i>Dépôt minimum : 100 FCFA
-                </span>
+            <h1 class="text-2xl md:text-4xl font-extrabold mb-2">Banque d'Épreuves et Corrigés Types</h1>
+            <p class="text-indigo-100 text-sm mb-4">Effectuez un dépôt libre (minimum <span class="text-yellow-300 font-bold">100 FCFA</span>) pour télécharger vos épreuves.</p>
+            <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 text-xs font-semibold">
+                <i class="fa-solid fa-tag text-yellow-400"></i> Dépôt minimum : 100 FCFA
             </div>
         </div>
     </section>
 
     <!-- MAIN CONTENT -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Épreuves disponibles</h2>
-                <p class="text-slate-500 text-sm">Filtrer par niveau et série ou recherchez par matière</p>
+                <h2 class="text-xl font-bold text-slate-800">Épreuves disponibles</h2>
+                <p class="text-slate-500 text-xs">Recherchez ou filtrez par niveau</p>
             </div>
-            <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                <input type="text" id="searchInput" onkeyup="filterDocs()" placeholder="Matière, sujet..." class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-64 text-sm">
-                <select id="levelFilter" onchange="filterDocs()" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-sm max-w-full">
-                    <option value="ALL">Tous les niveaux & séries</option>
-                    <optgroup label="Primaire & Collège">
-                        <option value="CEP">CEP / Primaire</option>
-                        <option value="6ème">6ème</option>
-                        <option value="5ème">5ème</option>
-                        <option value="4ème">4ème</option>
-                        <option value="BEPC">3ème / BEPC</option>
-                    </optgroup>
-                    <optgroup label="Secondaire - Seconde">
-                        <option value="2nde A">2nde A (Littéraire)</option>
-                        <option value="2nde C">2nde C (Scientifique)</option>
-                        <option value="2nde TV">2nde Technique / Pro</option>
-                    </optgroup>
-                    <optgroup label="Secondaire - Première">
-                        <option value="1ère A">1ère A1 / A2</option>
-                        <option value="1ère B">1ère B</option>
-                        <option value="1ère C">1ère C</option>
-                        <option value="1ère D">1ère D</option>
-                        <option value="1ère Tech">1ère E / F1-F4 / G1-G3</option>
-                    </optgroup>
-                    <optgroup label="Terminales / BAC">
-                        <option value="BAC A">BAC A1 / A2</option>
-                        <option value="BAC B">BAC B</option>
-                        <option value="BAC C">BAC C</option>
-                        <option value="BAC D">BAC D</option>
-                        <option value="BAC E">BAC E</option>
-                        <option value="BAC F">BAC F1 / F2 / F3 / F4</option>
-                        <option value="BAC G">BAC G1 / G2 / G3</option>
-                        <option value="BAC Autre">Autre BAC Technique/Pro</option>
-                    </optgroup>
-                    <optgroup label="Enseignement Supérieur">
-                        <option value="Université">Université / Supérieur</option>
-                    </optgroup>
+            <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <input type="text" id="searchInput" onkeyup="filterDocs()" placeholder="Rechercher une matière..." class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-64 text-sm">
+                <select id="levelFilter" onchange="filterDocs()" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-sm w-full sm:w-auto">
+                    <option value="ALL">Tous les niveaux</option>
+                    <option value="CEP">CEP / Primaire</option>
+                    <option value="BEPC">3ème / BEPC</option>
+                    <option value="BAC A">BAC A</option>
+                    <option value="BAC C">BAC C</option>
+                    <option value="BAC D">BAC D</option>
+                    <option value="BAC F">BAC F</option>
+                    <option value="BAC G">BAC G</option>
+                    <option value="Université">Université</option>
                 </select>
             </div>
         </div>
 
-        <div id="gridContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        <div id="gridContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </main>
 
-    <!-- MODAL DE PAIEMENT -->
+    <!-- MODAL DE DÉPÔT / PAIEMENT -->
     <div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="closeModal('paymentModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="closeModal('paymentModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
             
-            <h3 class="text-xl font-bold text-slate-800 mb-1">Téléchargement & Dépôt</h3>
-            <p id="modalDocTitle" class="text-sm font-semibold text-indigo-600 mb-4"></p>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Effectuer un dépôt</h3>
+            <p id="modalDocTitle" class="text-xs font-semibold text-indigo-600 mb-4"></p>
 
-            <p class="text-xs font-bold text-slate-700 mb-2">1. Envoyez votre dépôt (Min. 100 FCFA) sur :</p>
+            <p class="text-xs font-bold text-slate-700 mb-2">Envoyez votre dépôt (Min. 100 FCFA) :</p>
             <div class="space-y-2 mb-4">
                 <div class="p-2.5 border border-purple-200 rounded-xl flex items-center justify-between bg-purple-50/50">
-                    <div class="flex items-center space-x-2.5">
-                        <div class="bg-purple-700 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px]">MOOV</div>
-                        <div>
-                            <p class="font-bold text-xs text-slate-800">Moov Money</p>
-                            <p class="text-xs font-mono text-slate-600">01 98 99 62 96</p>
-                        </div>
+                    <div>
+                        <p class="font-bold text-xs text-slate-800">Moov Money</p>
+                        <p class="text-xs font-mono text-slate-600">01 98 99 62 96</p>
                     </div>
                     <button type="button" onclick="copyNum('0198996296')" class="text-xs text-purple-700 font-bold hover:underline">Copier</button>
                 </div>
 
                 <div class="p-2.5 border border-blue-200 rounded-xl flex items-center justify-between bg-blue-50/50">
-                    <div class="flex items-center space-x-2.5">
-                        <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px]">CELTIIS</div>
-                        <div>
-                            <p class="font-bold text-xs text-slate-800">Celtiis Cash</p>
-                            <p class="text-xs font-mono text-slate-600">01 49 00 98 12</p>
-                        </div>
+                    <div>
+                        <p class="font-bold text-xs text-slate-800">Celtiis Cash</p>
+                        <p class="text-xs font-mono text-slate-600">01 49 00 98 12</p>
                     </div>
                     <button type="button" onclick="copyNum('0149009812')" class="text-xs text-blue-600 font-bold hover:underline">Copier</button>
                 </div>
@@ -129,137 +91,80 @@
             <form onsubmit="confirmPayment(event)" class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Montant déposé (FCFA)</label>
-                    <input type="number" id="depositAmount" min="100" required placeholder="Ex: 100, 500, 1000..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-                    <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">Élément(s) souhaité(s) :</p>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="checkSubject" checked class="w-4 h-4 text-indigo-600 rounded">
-                        <span class="text-xs font-semibold text-slate-800">Épreuve (Sujet PDF)</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="checkCorrection" checked class="w-4 h-4 text-indigo-600 rounded">
-                        <span class="text-xs font-semibold text-slate-800">Corrigé Type (PDF)</span>
-                    </label>
+                    <input type="number" id="depositAmount" min="100" required placeholder="Ex: 100, 200..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Votre numéro Mobile Money</label>
-                    <input type="tel" id="senderPhone" required placeholder="Ex: 01 95 00 00 00" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="tel" id="senderPhone" required placeholder="Ex: 01 00 00 00 00" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Référence du dépôt (SMS)</label>
                     <input type="text" id="transactionId" required placeholder="Ex: TXN12345678" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 
-                <button type="submit" id="payButton" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-file-arrow-down"></i> Valider et Télécharger
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">
+                    Valider et Télécharger
                 </button>
             </form>
-
-            <div class="mt-4 pt-3 border-t border-slate-100 text-center">
-                <p class="text-[11px] text-slate-500">Un problème ou un retard dans le téléchargement ?</p>
-                <a href="tel:0198996296" class="text-xs font-bold text-indigo-600 hover:underline">
-                    <i class="fa-solid fa-headset mr-1"></i>Contactez le support : 01 98 99 62 96
-                </a>
-            </div>
         </div>
     </div>
 
-    <!-- MODAL CONFIGURATION / ADMIN -->
+    <!-- MODAL POPUP AJOUT / IMPORTER (+ BOUTON) -->
     <div id="adminModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="closeModal('adminModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="closeModal('adminModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
             
-            <!-- Étape 1 : Authentification par mot de passe -->
-            <div id="adminAuthSection" class="space-y-4">
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="bg-indigo-100 text-indigo-700 p-3 rounded-xl">
-                        <i class="fa-solid fa-lock text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800">Espace Configuration</h3>
-                        <p class="text-xs text-slate-500">Saisissez votre code d'accès</p>
-                    </div>
-                </div>
+            <!-- Étape 1 : Code d'accès -->
+            <div id="adminAuthSection" class="space-y-3">
+                <h3 class="text-base font-bold text-slate-800">Accès Réseaux / Importer</h3>
+                <p class="text-xs text-slate-500">Entrez votre code pour ajouter une épreuve</p>
+                
                 <form onsubmit="verifyAdminPassword(event)" class="space-y-3">
-                    <div>
-                        <input type="password" id="adminPassInput" required placeholder="Entrez le mot de passe" class="w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition">
-                        Valider
+                    <input type="password" id="adminPassInput" required placeholder="Mot de passe" class="w-full px-3 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-xl text-sm">
+                        Déverrouiller
                     </button>
                 </form>
             </div>
 
-            <!-- Étape 2 : Formulaire d'ajout -->
+            <!-- Étape 2 : Formulaire d'importation épreuve -->
             <div id="adminContentSection" class="hidden space-y-3">
-                <div class="flex items-center gap-2 mb-4">
-                    <div class="bg-indigo-100 text-indigo-700 p-2 rounded-lg">
-                        <i class="fa-solid fa-folder-plus text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800">Gestion du Catalogue</h3>
-                        <p class="text-xs text-slate-500">Ajouter une épreuve ou un corrigé</p>
-                    </div>
-                </div>
+                <h3 class="text-base font-bold text-slate-800">Importer une épreuve</h3>
 
                 <form onsubmit="addNewDoc(event)" class="space-y-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Titre de l'épreuve</label>
-                        <input type="text" id="adminTitle" required placeholder="Ex: Mathématiques BAC D 2023" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <input type="text" id="adminTitle" required placeholder="Ex: Mathématiques BAC D 2023" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Niveau & Série</label>
-                            <select id="adminLevel" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                <option value="CEP">CEP / Primaire</option>
-                                <option value="6ème">6ème</option>
-                                <option value="5ème">5ème</option>
-                                <option value="4ème">4ème</option>
-                                <option value="BEPC">3ème / BEPC</option>
-                                <option value="2nde A">2nde A</option>
-                                <option value="2nde C">2nde C</option>
-                                <option value="1ère A">1ère A1 / A2</option>
-                                <option value="1ère B">1ère B</option>
-                                <option value="1ère C">1ère C</option>
-                                <option value="1ère D">1ère D</option>
-                                <option value="BAC A">BAC A1 / A2</option>
-                                <option value="BAC B">BAC B</option>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Niveau</label>
+                            <select id="adminLevel" required class="w-full px-2 py-2 border rounded-lg text-sm bg-white">
+                                <option value="CEP">CEP</option>
+                                <option value="BEPC">BEPC</option>
+                                <option value="BAC A">BAC A</option>
                                 <option value="BAC C">BAC C</option>
                                 <option value="BAC D">BAC D</option>
-                                <option value="BAC E">BAC E</option>
-                                <option value="BAC F">BAC F (F1, F2, F3, F4)</option>
-                                <option value="BAC G">BAC G (G1, G2, G3)</option>
+                                <option value="BAC F">BAC F</option>
+                                <option value="BAC G">BAC G</option>
                                 <option value="Université">Université</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Matière</label>
-                            <input type="text" id="adminSubject" required placeholder="Ex: Mathématiques" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <input type="text" id="adminSubject" required placeholder="Ex: Maths" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Année</label>
-                        <input type="number" id="adminYear" value="2024" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Lien PDF (Google Drive, WhatsApp, etc.)</label>
+                        <input type="url" id="adminSubjectUrl" placeholder="https://..." class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
                     </div>
 
-                    <div class="border-t pt-2 space-y-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Lien PDF du Sujet (Épreuve)</label>
-                            <input type="url" id="adminSubjectUrl" placeholder="https://exemple.com/sujet.pdf" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Lien PDF du Corrigé Type</label>
-                            <input type="url" id="adminCorrUrl" placeholder="https://exemple.com/corrige.pdf" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition flex justify-center items-center gap-2 mt-2">
-                        <i class="fa-solid fa-plus-circle"></i> Ajouter au catalogue
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-sm shadow mt-2">
+                        + Enregistrer l'épreuve
                     </button>
                 </form>
             </div>
@@ -267,13 +172,8 @@
     </div>
 
     <!-- FOOTER -->
-    <footer class="bg-slate-900 text-slate-400 text-center text-sm py-6 border-t border-slate-800">
+    <footer class="bg-slate-900 text-slate-400 text-center text-xs py-4 border-t border-slate-800">
         <p>© 2026 ExamSuccès. Tous droits réservés.</p>
-        <p class="text-xs text-slate-400 mt-2 font-semibold">
-            <i class="fa-solid fa-phone text-yellow-400 mr-1"></i> Support / Service client : 
-            <a href="tel:0198996296" class="text-indigo-400 hover:underline">01 98 99 62 96</a> / 
-            <a href="tel:0149009812" class="text-indigo-400 hover:underline">01 49 00 98 12</a>
-        </p>
     </footer>
 
     <!-- SCRIPT JAVASCRIPT -->
@@ -281,9 +181,8 @@
         const ADMIN_PASSWORD = "Mohamed12";
 
         const defaultDocs = [
-            { id: 1, title: "Mathématiques BAC D 2023", level: "BAC D", subject: "Mathématiques", year: "2023", subjectUrl: "#", corrUrl: "#" },
-            { id: 2, title: "PCT BEPC 2023", level: "BEPC", subject: "PCT", year: "2023", subjectUrl: "#", corrUrl: "#" },
-            { id: 3, title: "Philosophie BAC A1/A2 2022", level: "BAC A", subject: "Philosophie", year: "2022", subjectUrl: "#", corrUrl: "#" }
+            { id: 1, title: "Mathématiques BAC D 2023", level: "BAC D", subject: "Mathématiques", subjectUrl: "#" },
+            { id: 2, title: "PCT BEPC 2023", level: "BEPC", subject: "PCT", subjectUrl: "#" }
         ];
 
         let documents = JSON.parse(localStorage.getItem('exam_docs')) || defaultDocs;
@@ -299,16 +198,116 @@
             container.innerHTML = '';
 
             if (list.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400"><i class="fa-solid fa-folder-open text-4xl mb-2"></i><p>Aucune épreuve trouvée pour ce choix.</p></div>';
+                container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 text-sm">Aucune épreuve trouvée.</div>';
                 return;
             }
 
             list.forEach(doc => {
                 const card = `
-                    <div class="bg-white rounded-xl shadow-sm hover:shadow-md border border-slate-200 p-5 flex flex-col justify-between transition relative">
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col justify-between shadow-sm">
                         <div>
-                            <div class="flex justify-between items-start mb-3">
-                                <span class="text-xs font-bold px-2.5 py-1 rounded-full ${
-                                    doc.level.includes('BAC') ? 'bg-red-100 text-red-700' :
-                                    doc.level === 'BEPC' ? 'bg-blue-100 text-blue-700' :
-                                    doc.level === 'CEP' ? 'bg-amber-100 text-amber-
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${doc.level}</span>
+                            <h3 class="font-bold text-slate-800 text-sm mt-2 mb-1">${doc.title}</h3>
+                            <p class="text-xs text-slate-500 mb-3">${doc.subject}</p>
+                        </div>
+
+                        <button type="button" onclick="openPaymentModal(${doc.id})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-lg transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-download"></i> Télécharger (Dépôt)
+                        </button>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        function filterDocs() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const level = document.getElementById('levelFilter').value;
+
+            const filtered = documents.filter(doc => {
+                const matchesSearch = doc.title.toLowerCase().includes(search) || doc.subject.toLowerCase().includes(search);
+                const matchesLevel = level === 'ALL' || doc.level === level;
+                return matchesSearch && matchesLevel;
+            });
+
+            renderDocs(filtered);
+        }
+
+        function openPaymentModal(id) {
+            selectedDoc = documents.find(d => d.id === id);
+            document.getElementById('modalDocTitle').innerText = selectedDoc.title;
+            document.getElementById('paymentModal').style.display = 'flex';
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function confirmPayment(event) {
+            event.preventDefault();
+            alert("Dépôt enregistré ! Le téléchargement démarre.");
+            closeModal('paymentModal');
+            if (selectedDoc.subjectUrl && selectedDoc.subjectUrl !== '#') {
+                window.open(selectedDoc.subjectUrl, '_blank');
+            } else {
+                window.open('https://www.w3.org/W3C/DesignIssues/diagrams/pdf.pdf', '_blank');
+            }
+        }
+
+        function openAdminModal() {
+            document.getElementById('adminAuthSection').classList.remove('hidden');
+            document.getElementById('adminContentSection').classList.add('hidden');
+            document.getElementById('adminPassInput').value = '';
+
+            const modal = document.getElementById('adminModal');
+            if(modal) {
+                modal.style.display = 'flex';
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function verifyAdminPassword(event) {
+            event.preventDefault();
+            const inputPass = document.getElementById('adminPassInput').value;
+            if (inputPass === ADMIN_PASSWORD) {
+                document.getElementById('adminAuthSection').classList.add('hidden');
+                document.getElementById('adminContentSection').classList.remove('hidden');
+            } else {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        function addNewDoc(event) {
+            event.preventDefault();
+            const newDoc = {
+                id: Date.now(),
+                title: document.getElementById('adminTitle').value,
+                level: document.getElementById('adminLevel').value,
+                subject: document.getElementById('adminSubject').value,
+                subjectUrl: document.getElementById('adminSubjectUrl').value || '#'
+            };
+
+            documents.unshift(newDoc);
+            saveDocs();
+            renderDocs(documents);
+            closeModal('adminModal');
+            event.target.reset();
+            alert("Épreuve ajoutée !");
+        }
+
+        function closeModal(id) { 
+            const m = document.getElementById(id);
+            if(m) {
+                m.style.display = 'none';
+                m.classList.add('hidden');
+            }
+        }
+
+        function copyNum(num) { 
+            navigator.clipboard.writeText(num); 
+            alert("Numéro " + num + " copié !"); 
+        }
+
+        window.onload = function() {
+            renderDocs(documents);
+        };
+    </script>
+</body>
+</html>
