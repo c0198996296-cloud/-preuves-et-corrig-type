@@ -1,234 +1,126 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-950 text-slate-100">
+<html lang="fr" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BoostVite - Panneau SMM</title>
-    <!-- Tailwind CSS & Icons -->
+    <title>Épreuves & Corrigés Types - 6ème en Terminale</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
-                    colors: { brand: { 500: '#6366f1', 600: '#4f46e5' } }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="h-full font-sans bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-x-hidden">
+<body class="h-full text-slate-800 antialiased flex flex-col min-h-screen">
 
-    <!-- Barre latérale / Sidebar -->
-    <aside class="w-full md:w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between">
-        <div>
-            <div class="flex items-center space-x-3 mb-8">
-                <div class="bg-gradient-to-tr from-brand-600 to-violet-500 p-2.5 rounded-xl text-white font-black text-2xl flex items-center justify-center w-11 h-11">⚡</div>
-                <div>
-                    <span class="font-extrabold text-xl text-white">BoostVite</span>
-                    <span class="text-[10px] block font-semibold text-brand-500 uppercase">SMM Portal</span>
-                </div>
-            </div>
+    <!-- En-tête / Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 py-6 px-4 text-center">
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">📚 Épreuves & Corrigés Types</h1>
+        <p class="text-sm text-slate-600 mt-1">De la 6ème en Terminale • Prix unique : <span class="font-semibold text-emerald-600">100 FCFA</span></p>
+    </header>
 
-            <!-- Carte de Solde -->
-            <div class="px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-2xl mb-6 flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-400">Solde Actuel</p>
-                    <span id="user-balance" class="text-lg font-bold text-emerald-400">$142.80</span>
-                </div>
-                <button onclick="openModal('modal-add-funds')" class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs hover:bg-emerald-500/20">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
-            </div>
-
-            <nav class="space-y-2">
-                <button onclick="openModal('modal-new-order')" class="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold bg-brand-600 text-white shadow-lg shadow-brand-600/30 hover:bg-brand-500 transition">
-                    <i class="fa-solid fa-plus-circle"></i>
-                    <span>Nouvelle Commande</span>
-                </button>
-            </nav>
-        </div>
-    </aside>
-
-    <!-- Contenu Principal -->
-    <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <div>
-                <h1 class="text-2xl font-extrabold text-white">Tableau de bord des commandes</h1>
-                <p class="text-sm text-slate-400">Suivi et gestion de vos services SMM.</p>
-            </div>
-            <button onclick="openModal('modal-new-order')" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-brand-600/30 hover:bg-brand-500">
-                + Nouvelle Commande
-            </button>
+    <!-- Section Info Paiement -->
+    <main class="flex-grow max-w-xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center shadow-sm">
+            <p class="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Paiement Mobile Rapide</p>
+            <p class="text-sm text-emerald-900 mt-1">Celtiis Cash : <strong class="text-base font-bold text-emerald-700">0149009812</strong></p>
         </div>
 
-        <!-- Tableau des Commandes -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto shadow-xl">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-950 text-xs text-slate-400 uppercase border-b border-slate-800">
-                        <th class="py-3 px-4">ID</th>
-                        <th class="py-3 px-4">Service</th>
-                        <th class="py-3 px-4">Lien</th>
-                        <th class="py-3 px-4">Quantité</th>
-                        <th class="py-3 px-4">Prix</th>
-                        <th class="py-3 px-4">Statut</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-tbody" class="divide-y divide-slate-800 text-sm">
-                    <tr>
-                        <td class="py-3 px-4 font-mono text-brand-500 font-bold">#1001</td>
-                        <td class="py-3 px-4 text-slate-200">TikTok Vues [1M/jour]</td>
-                        <td class="py-3 px-4 text-indigo-400 max-w-xs truncate"><a href="#" target="_blank">https://tiktok.com/@demo</a></td>
-                        <td class="py-3 px-4 font-bold text-slate-200">5000</td>
-                        <td class="py-3 px-4 text-slate-100 font-bold">$0.25</td>
-                        <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400">Terminé</span></td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Liste des classes -->
+        <div class="space-y-4">
+            
+            <!-- Terminale -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Classe de Terminale (BAC)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Épreuves et Corrigés Types (Toutes séries)</p>
+                    <p class="text-sm font-semibold text-rose-600 mt-2">100 FCFA</p>
+                </div>
+                <a href="https://wa.me/2290149009812?text=Bonjour,%20je%20veux%20acheter%20les%20corrigés%20de%20Terminale%20à%20100f" target="_blank" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg text-center transition shadow-sm">
+                    Acheter via WhatsApp
+                </a>
+            </div>
+
+            <!-- Première -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Classe de Première (1ère)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Épreuves et Corrigés Types</p>
+                    <p class="text-sm font-semibold text-rose-600 mt-2">100 FCFA</p>
+                </div>
+                <a href="https://wa.me/2290149009812?text=Bonjour,%20je%20veux%20acheter%20les%20corrigés%20de%20Première%20à%20100f" target="_blank" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg text-center transition shadow-sm">
+                    Acheter via WhatsApp
+                </a>
+            </div>
+
+            <!-- Seconde -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Classe de Seconde (2nde)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Épreuves et Corrigés Types</p>
+                    <p class="text-sm font-semibold text-rose-600 mt-2">100 FCFA</p>
+                </div>
+                <a href="https://wa.me/2290149009812?text=Bonjour,%20je%20veux%20acheter%20les%20corrigés%20de%20Seconde%20à%20100f" target="_blank" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg text-center transition shadow-sm">
+                    Acheter via WhatsApp
+                </a>
+            </div>
+
+            <!-- Troisième -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Classe de Troisième (BEPC)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Épreuves et Corrigés Types</p>
+                    <p class="text-sm font-semibold text-rose-600 mt-2">100 FCFA</p>
+                </div>
+                <a href="https://wa.me/2290149009812?text=Bonjour,%20je%20veux%20acheter%20les%20corrigés%20de%20Troisième%20à%20100f" target="_blank" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg text-center transition shadow-sm">
+                    Acheter via WhatsApp
+                </a>
+            </div>
+
+            <!-- Quatrième -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Classe de Quatrième (4ème)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Épreuves et Corrigés Types</p>
+                    <p class="text-sm font-semibold text-rose-600 mt-2">100 FCFA</p>
+                </div>
+                <a href="https://wa.me/2290149009812?text=Bonjour,%20je%20veux%20acheter%20les%20corrigés%20de%20Quatrième%20à%20100f" target="_blank" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg text-center transition shadow-sm">
+                    Acheter via WhatsApp
+                </a>
+            </div>
+
+            <!-- Cinquième -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Classe de Cinquième (5ème)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Épreuves et Corrigés Types</p>
+                    <p class="text-sm font-semibold text-rose-600 mt-2">100 FCFA</p>
+                </div>
+                <a href="https://wa.me/2290149009812?text=Bonjour,%20je%20veux%20acheter%20les%20corrigés%20de%20Cinquième%20à%20100f" target="_blank" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg text-center transition shadow-sm">
+                    Acheter via WhatsApp
+                </a>
+            </div>
+
+            <!-- Sixième -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:shadow-md">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Classe de Sixième (6ème)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Épreuves et Corrigés Types</p>
+                    <p class="text-sm font-semibold text-rose-600 mt-2">100 FCFA</p>
+                </div>
+                <a href="https://wa.me/2290149009812?text=Bonjour,%20je%20veux%20acheter%20les%20corrigés%20de%20Sixième%20à%20100f" target="_blank" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg text-center transition shadow-sm">
+                    Acheter via WhatsApp
+                </a>
+            </div>
+
         </div>
     </main>
 
-    <!-- Modal : Nouvelle Commande -->
-    <div id="modal-new-order" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
-            <h3 class="font-bold text-lg text-white">Passer une Commande</h3>
-            <form onsubmit="createOrder(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Catégorie</label>
-                    <select id="order-category" onchange="updateServices()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
-                        <option value="tiktok">TikTok - Vues & Abonnés</option>
-                        <option value="instagram">Instagram - Followers & Likes</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Service</label>
-                    <select id="order-service" onchange="calculatePrice()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500"></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Lien du compte / vidéo</label>
-                    <input type="url" id="order-link" required placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Quantité</label>
-                    <input type="number" id="order-quantity" value="1000" min="100" oninput="calculatePrice()" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
-                </div>
-                <div class="p-4 bg-slate-950 rounded-xl flex justify-between items-center border border-slate-800">
-                    <span class="text-xs text-slate-400">Prix Total :</span>
-                    <span id="order-total-price" class="text-xl font-bold text-brand-500">$0.00</span>
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="closeModal('modal-new-order')" class="px-4 py-2 text-slate-400 hover:text-white">Annuler</button>
-                    <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg">Valider la commande</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Pied de page -->
+    <footer class="text-center py-6 text-xs text-slate-400 border-t border-slate-200 mt-auto">
+        &copy; 2026 • Tous droits réservés
+    </footer>
 
-    <!-- Modal : Recharger Solde -->
-    <div id="modal-add-funds" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h3 class="font-bold text-lg text-white">Recharger votre solde</h3>
-            <div>
-                <label class="block text-xs text-slate-300 mb-1">Montant ($)</label>
-                <input type="number" id="funds-amount" value="10" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
-            </div>
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeModal('modal-add-funds')" class="px-4 py-2 text-slate-400 hover:text-white">Annuler</button>
-                <button onclick="addFunds()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl">Ajouter les fonds</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script JavaScript Intégré -->
-    <script>
-        let balance = 142.80;
-        let orderCount = 1001;
-
-        const servicesData = {
-            tiktok: [
-                { id: 201, name: "TikTok Vues [1M/jour]", rate: 0.05 },
-                { id: 202, name: "TikTok Abonnés Haute Qualité", rate: 4.20 }
-            ],
-            instagram: [
-                { id: 101, name: "Instagram Followers - Haute Qualité", rate: 2.50 },
-                { id: 102, name: "Instagram Likes Rapides", rate: 0.80 }
-            ]
-        };
-
-        function updateServices() {
-            const cat = document.getElementById('order-category').value;
-            const select = document.getElementById('order-service');
-            select.innerHTML = '';
-            servicesData[cat].forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.innerText = `${s.name} - $${s.rate.toFixed(2)}/1000`;
-                opt.dataset.rate = s.rate;
-                select.appendChild(opt);
-            });
-            calculatePrice();
-        }
-
-        function calculatePrice() {
-            const select = document.getElementById('order-service');
-            const opt = select.options[select.selectedIndex];
-            const rate = opt ? parseFloat(opt.dataset.rate) : 0;
-            const qty = parseInt(document.getElementById('order-quantity').value) || 0;
-            document.getElementById('order-total-price').innerText = `$${((qty / 1000) * rate).toFixed(2)}`;
-        }
-
-        function createOrder(e) {
-            e.preventDefault();
-            const select = document.getElementById('order-service');
-            const serviceName = select.options[select.selectedIndex].innerText.split(' - $')[0];
-            const link = document.getElementById('order-link').value;
-            const qty = document.getElementById('order-quantity').value;
-            const price = parseFloat(document.getElementById('order-total-price').innerText.replace('$', ''));
-
-            if (price > balance) {
-                alert('Solde insuffisant !');
-                return;
-            }
-
-            balance -= price;
-            document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
-            orderCount++;
-
-            const tbody = document.getElementById('orders-tbody');
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="py-3 px-4 font-mono text-brand-500 font-bold">#${orderCount}</td>
-                <td class="py-3 px-4 text-slate-200">${serviceName}</td>
-                <td class="py-3 px-4 text-indigo-400 max-w-xs truncate"><a href="${link}" target="_blank">${link}</a></td>
-                <td class="py-3 px-4 font-bold text-slate-200">${qty}</td>
-                <td class="py-3 px-4 text-slate-100 font-bold">$${price.toFixed(2)}</td>
-                <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-brand-500/20 text-brand-400">En cours</span></td>
-            `;
-            tbody.prepend(tr);
-
-            closeModal('modal-new-order');
-            document.getElementById('order-link').value = '';
-        }
-
-        function addFunds() {
-            const amount = parseFloat(document.getElementById('funds-amount').value) || 0;
-            balance += amount;
-            document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
-            closeModal('modal-add-funds');
-        }
-
-        function openModal(id) {
-            if (id === 'modal-new-order') updateServices();
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
-    </script>
 </body>
-    </html>
-    
+</html>
