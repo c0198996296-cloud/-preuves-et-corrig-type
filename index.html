@@ -1,152 +1,10 @@
-require('dotenv').config();
-const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
-const axios = require('axios');
-const Stripe = require('stripe');
-
-const app = express();
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock_key');
-
-app.use(cors());
-app.use(express.json());
-
-// ----------------------------------------------------
-// 1. Initialisation de la Base de Données SQLite
-// ----------------------------------------------------
-const db = new sqlite3.Database('./database.db', (err) => {
-    if (err) console.error('Erreur BDD:', err.message);
-    else console.log('Base de données SQLite connectée.');
-});
-
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE,
-        balance REAL DEFAULT 142.80
-    )`);
-
-    db.run(`INSERT OR IGNORE INTO users (id, email, balance) VALUES (1, 'demo@boostvite.com', 142.80)`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        service_id INTEGER,
-        service_name TEXT,
-        link TEXT,
-        quantity INTEGER,
-        price REAL,
-        status TEXT DEFAULT 'En attente',
-        api_order_id INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-});
-
-// ----------------------------------------------------
-// 2. Endpoints API (Backend)
-// ----------------------------------------------------
-
-// Obtenir le profil utilisateur
-app.get('/api/user/:id', (req, res) => {
-    db.get('SELECT id, email, balance FROM users WHERE id = ?', [req.params.id], (err, user) => {
-        if (err || !user) return res.status(404).json({ error: 'Utilisateur introuvable' });
-        res.json(user);
-    });
-});
-
-// Récupérer les commandes
-app.get('/api/orders/user/:userId', (req, res) => {
-    db.all('SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC', [req.params.userId], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-// Créer une commande
-app.post('/api/orders/create', async (req, res) => {
-    const { userId, serviceId, serviceName, link, quantity, price } = req.body;
-
-    db.get('SELECT balance FROM users WHERE id = ?', [userId], async (err, user) => {
-        if (err || !user) return res.status(400).json({ error: 'Utilisateur introuvable' });
-        if (user.balance < price) return res.status(400).json({ error: 'Solde insuffisant' });
-
-        try {
-            let providerOrderId = null;
-
-            if (process.env.SMM_PROVIDER_API_KEY) {
-                const response = await axios.post(process.env.SMM_PROVIDER_URL, new URLSearchParams({
-                    key: process.env.SMM_PROVIDER_API_KEY,
-                    action: 'add',
-                    service: serviceId,
-                    link: link,
-                    quantity: quantity
-                }));
-                
-                if (response.data && response.data.order) {
-                    providerOrderId = response.data.order;
-                }
-            }
-
-            const newBalance = user.balance - price;
-            db.run('UPDATE users SET balance = ? WHERE id = ?', [newBalance, userId]);
-
-            db.run(
-                `INSERT INTO orders (user_id, service_id, service_name, link, quantity, price, api_order_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [userId, serviceId, serviceName, link, quantity, price, providerOrderId],
-                function(err) {
-                    if (err) return res.status(500).json({ error: err.message });
-                    res.json({
-                        success: true,
-                        orderId: this.lastID,
-                        newBalance: newBalance,
-                        providerOrderId: providerOrderId
-                    });
-                }
-            );
-
-        } catch (apiError) {
-            console.error('Erreur API Fournisseur:', apiError.message);
-            res.status(500).json({ error: 'Erreur de transmission au fournisseur SMM' });
-        }
-    });
-});
-
-// Session Stripe
-app.post('/api/payments/create-checkout-session', async (req, res) => {
-    const { amount, userId } = req.body;
-    try {
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [{
-                price_data: {
-                    currency: 'usd',
-                    product_data: { name: 'Recharge Solde BoostVite' },
-                    unit_amount: Math.round(amount * 100),
-                },
-                quantity: 1,
-            }],
-            mode: 'payment',
-            success_url: `http://localhost:3000/?payment=success`,
-            cancel_url: `http://localhost:3000/?payment=cancel`,
-            metadata: { userId, amount }
-        });
-        res.json({ id: session.id, url: session.url });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
-// ----------------------------------------------------
-// 3. Interface Web Frontend Embarquée
-// ----------------------------------------------------
-app.get('/', (req, res) => {
-    res.send(`
 <!DOCTYPE html>
 <html lang="fr" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BoostVite - Panneau SMM Tout-en-un</title>
+    <title>BoostVite - Panneau SMM</title>
+    <!-- Tailwind CSS & Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -161,9 +19,10 @@ app.get('/', (req, res) => {
         }
     </script>
 </head>
-<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-x-hidden">
+<body class="h-full font-sans bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-x-hidden">
 
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between hidden md:flex">
+    <!-- Barre latérale / Sidebar -->
+    <aside class="w-full md:w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between">
         <div>
             <div class="flex items-center space-x-3 mb-8">
                 <div class="bg-gradient-to-tr from-brand-600 to-violet-500 p-2.5 rounded-xl text-white font-black text-2xl flex items-center justify-center w-11 h-11">⚡</div>
@@ -173,16 +32,19 @@ app.get('/', (req, res) => {
                 </div>
             </div>
 
+            <!-- Carte de Solde -->
             <div class="px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-2xl mb-6 flex items-center justify-between">
                 <div>
                     <p class="text-xs text-slate-400">Solde Actuel</p>
-                    <span id="user-balance" class="text-lg font-bold text-emerald-400">$0.00</span>
+                    <span id="user-balance" class="text-lg font-bold text-emerald-400">$142.80</span>
                 </div>
-                <button onclick="openAddFundsModal()" class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs hover:bg-emerald-500/20"><i class="fa-solid fa-plus"></i></button>
+                <button onclick="openModal('modal-add-funds')" class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs hover:bg-emerald-500/20">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
             </div>
 
             <nav class="space-y-2">
-                <button onclick="openNewOrderModal()" class="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold bg-brand-600 text-white shadow-lg shadow-brand-600/30 hover:bg-brand-500 transition">
+                <button onclick="openModal('modal-new-order')" class="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold bg-brand-600 text-white shadow-lg shadow-brand-600/30 hover:bg-brand-500 transition">
                     <i class="fa-solid fa-plus-circle"></i>
                     <span>Nouvelle Commande</span>
                 </button>
@@ -190,23 +52,24 @@ app.get('/', (req, res) => {
         </div>
     </aside>
 
+    <!-- Contenu Principal -->
     <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
             <div>
                 <h1 class="text-2xl font-extrabold text-white">Tableau de bord des commandes</h1>
-                <p class="text-sm text-slate-400">Suivi et gestion en direct.</p>
+                <p class="text-sm text-slate-400">Suivi et gestion de vos services SMM.</p>
             </div>
-            <button onclick="openNewOrderModal()" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-brand-600/30 hover:bg-brand-500">
+            <button onclick="openModal('modal-new-order')" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-brand-600/30 hover:bg-brand-500">
                 + Nouvelle Commande
             </button>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <!-- Tableau des Commandes -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto shadow-xl">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-950 text-xs text-slate-400 uppercase border-b border-slate-800">
                         <th class="py-3 px-4">ID</th>
-                        <th class="py-3 px-4">Date</th>
                         <th class="py-3 px-4">Service</th>
                         <th class="py-3 px-4">Lien</th>
                         <th class="py-3 px-4">Quantité</th>
@@ -214,64 +77,76 @@ app.get('/', (req, res) => {
                         <th class="py-3 px-4">Statut</th>
                     </tr>
                 </thead>
-                <tbody id="orders-tbody" class="divide-y divide-slate-800 text-sm"></tbody>
+                <tbody id="orders-tbody" class="divide-y divide-slate-800 text-sm">
+                    <tr>
+                        <td class="py-3 px-4 font-mono text-brand-500 font-bold">#1001</td>
+                        <td class="py-3 px-4 text-slate-200">TikTok Vues [1M/jour]</td>
+                        <td class="py-3 px-4 text-indigo-400 max-w-xs truncate"><a href="#" target="_blank">https://tiktok.com/@demo</a></td>
+                        <td class="py-3 px-4 font-bold text-slate-200">5000</td>
+                        <td class="py-3 px-4 text-slate-100 font-bold">$0.25</td>
+                        <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400">Terminé</span></td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </main>
 
-    <!-- Modal Commande -->
+    <!-- Modal : Nouvelle Commande -->
     <div id="modal-new-order" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
             <h3 class="font-bold text-lg text-white">Passer une Commande</h3>
-            <form onsubmit="handleNewOrderSubmit(event)" class="space-y-4">
+            <form onsubmit="createOrder(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Catégorie</label>
-                    <select id="order-category" onchange="updateServicesDropdown()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+                    <select id="order-category" onchange="updateServices()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
                         <option value="tiktok">TikTok - Vues & Abonnés</option>
                         <option value="instagram">Instagram - Followers & Likes</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Service</label>
-                    <select id="order-service" onchange="calculatePrice()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white"></select>
+                    <select id="order-service" onchange="calculatePrice()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500"></select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Lien Cible</label>
-                    <input type="url" id="order-link" required placeholder="https://tiktok.com/@votre_compte" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Lien du compte / vidéo</label>
+                    <input type="url" id="order-link" required placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Quantité</label>
-                    <input type="number" id="order-quantity" value="1000" min="100" oninput="calculatePrice()" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+                    <input type="number" id="order-quantity" value="1000" min="100" oninput="calculatePrice()" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
                 </div>
-                <div class="p-4 bg-slate-950 rounded-xl flex justify-between items-center">
-                    <span class="text-xs text-slate-400">Total :</span>
+                <div class="p-4 bg-slate-950 rounded-xl flex justify-between items-center border border-slate-800">
+                    <span class="text-xs text-slate-400">Prix Total :</span>
                     <span id="order-total-price" class="text-xl font-bold text-brand-500">$0.00</span>
                 </div>
                 <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="closeNewOrderModal()" class="px-4 py-2 text-slate-400">Annuler</button>
-                    <button type="submit" class="px-5 py-2 bg-brand-600 text-white font-bold rounded-xl shadow-lg">Confirmer</button>
+                    <button type="button" onclick="closeModal('modal-new-order')" class="px-4 py-2 text-slate-400 hover:text-white">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg">Valider la commande</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Solde -->
+    <!-- Modal : Recharger Solde -->
     <div id="modal-add-funds" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
             <h3 class="font-bold text-lg text-white">Recharger votre solde</h3>
             <div>
                 <label class="block text-xs text-slate-300 mb-1">Montant ($)</label>
-                <input type="number" id="funds-amount" value="50" min="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+                <input type="number" id="funds-amount" value="10" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
             </div>
             <div class="flex justify-end space-x-3">
-                <button onclick="closeAddFundsModal()" class="px-4 py-2 text-slate-400">Annuler</button>
-                <button onclick="triggerStripePayment()" class="px-5 py-2 bg-emerald-600 text-white font-bold rounded-xl">Payer avec Stripe</button>
+                <button onclick="closeModal('modal-add-funds')" class="px-4 py-2 text-slate-400 hover:text-white">Annuler</button>
+                <button onclick="addFunds()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl">Ajouter les fonds</button>
             </div>
         </div>
     </div>
 
+    <!-- Script JavaScript Intégré -->
     <script>
-        const CURRENT_USER_ID = 1;
+        let balance = 142.80;
+        let orderCount = 1001;
+
         const servicesData = {
             tiktok: [
                 { id: 201, name: "TikTok Vues [1M/jour]", rate: 0.05 },
@@ -283,43 +158,14 @@ app.get('/', (req, res) => {
             ]
         };
 
-        async function loadUserData() {
-            const res = await fetch(\`/api/user/\${CURRENT_USER_ID}\`);
-            const user = await res.json();
-            if (user && user.balance !== undefined) {
-                document.getElementById('user-balance').innerText = \`$\${user.balance.toFixed(2)}\`;
-            }
-        }
-
-        async function loadOrders() {
-            const res = await fetch(\`/api/orders/user/\${CURRENT_USER_ID}\`);
-            const orders = await res.json();
-            const tbody = document.getElementById('orders-tbody');
-            tbody.innerHTML = '';
-
-            orders.forEach(o => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = \`
-                    <td class="py-3 px-4 font-mono text-brand-500 font-bold">#\${o.id}</td>
-                    <td class="py-3 px-4 text-xs text-slate-400">\${o.created_at}</td>
-                    <td class="py-3 px-4 text-slate-200">\${o.service_name}</td>
-                    <td class="py-3 px-4 text-indigo-400 max-w-xs truncate"><a href="\${o.link}" target="_blank">\${o.link}</a></td>
-                    <td class="py-3 px-4 font-bold text-slate-200">\${o.quantity}</td>
-                    <td class="py-3 px-4 text-slate-100 font-bold">\$\${o.price.toFixed(2)}</td>
-                    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-brand-500/20 text-brand-400">\${o.status}</span></td>
-                \`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function updateServicesDropdown() {
+        function updateServices() {
             const cat = document.getElementById('order-category').value;
             const select = document.getElementById('order-service');
             select.innerHTML = '';
             servicesData[cat].forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
-                opt.innerText = \`\${s.name} - $\${s.rate.toFixed(2)}/1000\`;
+                opt.innerText = `${s.name} - $${s.rate.toFixed(2)}/1000`;
                 opt.dataset.rate = s.rate;
                 select.appendChild(opt);
             });
@@ -331,67 +177,58 @@ app.get('/', (req, res) => {
             const opt = select.options[select.selectedIndex];
             const rate = opt ? parseFloat(opt.dataset.rate) : 0;
             const qty = parseInt(document.getElementById('order-quantity').value) || 0;
-            document.getElementById('order-total-price').innerText = \`$\${((qty / 1000) * rate).toFixed(2)}\`;
+            document.getElementById('order-total-price').innerText = `$${((qty / 1000) * rate).toFixed(2)}`;
         }
 
-        async function handleNewOrderSubmit(e) {
+        function createOrder(e) {
             e.preventDefault();
             const select = document.getElementById('order-service');
-            const opt = select.options[select.selectedIndex];
-            
-            const payload = {
-                userId: CURRENT_USER_ID,
-                serviceId: select.value,
-                serviceName: opt.innerText.split(' - $')[0],
-                link: document.getElementById('order-link').value,
-                quantity: parseInt(document.getElementById('order-quantity').value),
-                price: parseFloat(document.getElementById('order-total-price').innerText.replace('$', ''))
-            };
+            const serviceName = select.options[select.selectedIndex].innerText.split(' - $')[0];
+            const link = document.getElementById('order-link').value;
+            const qty = document.getElementById('order-quantity').value;
+            const price = parseFloat(document.getElementById('order-total-price').innerText.replace('$', ''));
 
-            const res = await fetch('/api/orders/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                closeNewOrderModal();
-                loadUserData();
-                loadOrders();
-            } else {
-                alert('Erreur: ' + data.error);
+            if (price > balance) {
+                alert('Solde insuffisant !');
+                return;
             }
+
+            balance -= price;
+            document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
+            orderCount++;
+
+            const tbody = document.getElementById('orders-tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="py-3 px-4 font-mono text-brand-500 font-bold">#${orderCount}</td>
+                <td class="py-3 px-4 text-slate-200">${serviceName}</td>
+                <td class="py-3 px-4 text-indigo-400 max-w-xs truncate"><a href="${link}" target="_blank">${link}</a></td>
+                <td class="py-3 px-4 font-bold text-slate-200">${qty}</td>
+                <td class="py-3 px-4 text-slate-100 font-bold">$${price.toFixed(2)}</td>
+                <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-brand-500/20 text-brand-400">En cours</span></td>
+            `;
+            tbody.prepend(tr);
+
+            closeModal('modal-new-order');
+            document.getElementById('order-link').value = '';
         }
 
-        async function triggerStripePayment() {
-            const amount = parseFloat(document.getElementById('funds-amount').value);
-            const res = await fetch('/api/payments/create-checkout-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, userId: CURRENT_USER_ID })
-            });
-            const data = await res.json();
-            if (data.url) window.location.href = data.url;
+        function addFunds() {
+            const amount = parseFloat(document.getElementById('funds-amount').value) || 0;
+            balance += amount;
+            document.getElementById('user-balance').innerText = `$${balance.toFixed(2)}`;
+            closeModal('modal-add-funds');
         }
 
-        function openNewOrderModal() { updateServicesDropdown(); document.getElementById('modal-new-order').classList.remove('hidden'); }
-        function closeNewOrderModal() { document.getElementById('modal-new-order').classList.add('hidden'); }
-        function openAddFundsModal() { document.getElementById('modal-add-funds').classList.remove('hidden'); }
-        function closeAddFundsModal() { document.getElementById('modal-add-funds').classList.add('hidden'); }
+        function openModal(id) {
+            if (id === 'modal-new-order') updateServices();
+            document.getElementById(id).classList.remove('hidden');
+        }
 
-        window.onload = () => { loadUserData(); loadOrders(); };
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
     </script>
 </body>
-</html>
-    `);
-});
-
-// ----------------------------------------------------
-// Démarrage
-// ----------------------------------------------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Serveur démarré : http://localhost:${PORT}`);
-});
+    </html>
     
