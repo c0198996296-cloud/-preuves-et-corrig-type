@@ -1,356 +1,230 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExamSuccès - Épreuves & Corrigés Types</title>
+    <title>Studio IA - Assistant de Contenu Viral</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-slate-50 font-sans text-slate-800 flex flex-col min-h-screen">
-
-    <!-- HEADER -->
-    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-graduation-cap text-yellow-400 text-2xl"></i>
-                <span class="text-xl font-extrabold tracking-wide">ExamSuccès</span>
-            </div>
-            
-            <!-- BOUTON + POUR IMPORTER UNE ÉPREUVE -->
-            <button type="button" onclick="openAdminModal()" class="bg-yellow-400 hover:bg-yellow-300 text-indigo-950 font-bold w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md transition active:scale-95" title="Importer une épreuve">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- HERO -->
-    <section class="bg-gradient-to-r from-indigo-800 to-purple-700 text-white py-8 px-4 text-center">
-        <div class="max-w-3xl mx-auto">
-            <h1 class="text-2xl md:text-4xl font-extrabold mb-2">Banque d'Épreuves et Corrigés Types</h1>
-            <p class="text-indigo-100 text-sm mb-4">Effectuez un dépôt libre (minimum <span class="text-yellow-300 font-bold">100 FCFA</span>) pour télécharger vos épreuves.</p>
-        </div>
-    </section>
-
-    <!-- MAIN CONTENT -->
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3">
-            <div>
-                <h2 class="text-xl font-bold text-slate-800">Épreuves disponibles</h2>
-                <p class="text-slate-500 text-xs">Recherchez ou filtrez par niveau</p>
-            </div>
-            <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                <input type="text" id="searchInput" onkeyup="filterDocs()" placeholder="Rechercher une matière..." class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-64 text-sm">
-                
-                <!-- FILTRE PAR NIVEAU COMPLET -->
-                <select id="levelFilter" onchange="filterDocs()" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-sm w-full sm:w-auto">
-                    <option value="ALL">Tous les niveaux</option>
-                    <optgroup label="Primaire & Collège">
-                        <option value="CEP">CEP / Primaire</option>
-                        <option value="6ème">6ème</option>
-                        <option value="5ème">5ème</option>
-                        <option value="4ème">4ème</option>
-                        <option value="BEPC">3ème / BEPC</option>
-                    </optgroup>
-                    <optgroup label="Secondaire - Seconde">
-                        <option value="2nde A">2nde A</option>
-                        <option value="2nde C">2nde C</option>
-                    </optgroup>
-                    <optgroup label="Secondaire - Première">
-                        <option value="1ère A">1ère A</option>
-                        <option value="1ère B">1ère B</option>
-                        <option value="1ère C">1ère C</option>
-                        <option value="1ère D">1ère D</option>
-                    </optgroup>
-                    <optgroup label="Terminales / BAC">
-                        <option value="BAC A">BAC A</option>
-                        <option value="BAC B">BAC B</option>
-                        <option value="BAC C">BAC C</option>
-                        <option value="BAC D">BAC D</option>
-                        <option value="BAC E">BAC E</option>
-                        <option value="BAC F">BAC F</option>
-                        <option value="BAC G">BAC G</option>
-                    </optgroup>
-                    <optgroup label="Supérieur">
-                        <option value="Université">Université</option>
-                    </optgroup>
-                </select>
-            </div>
-        </div>
-
-        <div id="gridContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </main>
-
-    <!-- MODAL DE DÉPÔT (RÉFÉRENCE SMS) -->
-    <div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="closeModal('paymentModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
-            
-            <h3 class="text-lg font-bold text-slate-800 mb-1">Effectuer un dépôt</h3>
-            <p id="modalDocTitle" class="text-xs font-semibold text-indigo-600 mb-4"></p>
-
-            <p class="text-xs font-bold text-slate-700 mb-2">Envoyez votre dépôt (Min. 100 FCFA) :</p>
-            <div class="space-y-2 mb-4">
-                <div class="p-2.5 border border-purple-200 rounded-xl flex items-center justify-between bg-purple-50/50">
-                    <div>
-                        <p class="font-bold text-xs text-slate-800">Moov Money</p>
-                        <p class="text-xs font-mono text-slate-600">01 98 99 62 96</p>
-                    </div>
-                    <button type="button" onclick="copyNum('0198996296')" class="text-xs text-purple-700 font-bold hover:underline">Copier</button>
-                </div>
-
-                <div class="p-2.5 border border-blue-200 rounded-xl flex items-center justify-between bg-blue-50/50">
-                    <div>
-                        <p class="font-bold text-xs text-slate-800">Celtiis Cash</p>
-                        <p class="text-xs font-mono text-slate-600">01 49 00 98 12</p>
-                    </div>
-                    <button type="button" onclick="copyNum('0149009812')" class="text-xs text-blue-600 font-bold hover:underline">Copier</button>
-                </div>
-            </div>
-
-            <form onsubmit="confirmPayment(event)" class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Montant déposé (FCFA)</label>
-                    <input type="number" id="depositAmount" min="100" required placeholder="Ex: 100, 200..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Votre numéro Mobile Money</label>
-                    <input type="tel" id="senderPhone" required placeholder="Ex: 01 00 00 00 00" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Référence du dépôt (SMS)</label>
-                    <input type="text" id="transactionId" required placeholder="Ex: TXN12345678" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">
-                    Valider et Télécharger
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL IMPORTER / AJOUTER ÉPREUVE (GALERIE & CLASSES) -->
-    <div id="adminModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="closeModal('adminModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
-            
-            <!-- Étape 1 : Authentification -->
-            <div id="adminAuthSection" class="space-y-3">
-                <h3 class="text-base font-bold text-slate-800">Accès Importer</h3>
-                <p class="text-xs text-slate-500">Entrez votre code d'accès pour ajouter une épreuve</p>
-                
-                <form onsubmit="verifyAdminPassword(event)" class="space-y-3">
-                    <input type="password" id="adminPassInput" required placeholder="Mot de passe" class="w-full px-3 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-xl text-sm">
-                        Déverrouiller
-                    </button>
-                </form>
-            </div>
-
-            <!-- Étape 2 : Formulaire d'ajout -->
-            <div id="adminContentSection" class="hidden space-y-3">
-                <h3 class="text-base font-bold text-slate-800">Importer une épreuve</h3>
-
-                <form onsubmit="addNewDoc(event)" class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Titre de l'épreuve</label>
-                        <input type="text" id="adminTitle" required placeholder="Ex: Mathématiques 4ème 2023" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Niveau & Classe</label>
-                            <select id="adminLevel" required class="w-full px-2 py-2 border rounded-lg text-sm bg-white">
-                                <optgroup label="Primaire">
-                                    <option value="CEP">CEP / Primaire</option>
-                                </optgroup>
-                                <optgroup label="Collège (Intermédiaire & Examen)">
-                                    <option value="6ème">6ème</option>
-                                    <option value="5ème">5ème</option>
-                                    <option value="4ème">4ème</option>
-                                    <option value="BEPC">3ème / BEPC</option>
-                                </optgroup>
-                                <optgroup label="Lycée - Seconde">
-                                    <option value="2nde A">2nde A</option>
-                                    <option value="2nde C">2nde C</option>
-                                </optgroup>
-                                <optgroup label="Lycée - Première">
-                                    <option value="1ère A">1ère A</option>
-                                    <option value="1ère B">1ère B</option>
-                                    <option value="1ère C">1ère C</option>
-                                    <option value="1ère D">1ère D</option>
-                                </optgroup>
-                                <optgroup label="Lycée - Terminale / BAC">
-                                    <option value="BAC A">BAC A</option>
-                                    <option value="BAC B">BAC B</option>
-                                    <option value="BAC C">BAC C</option>
-                                    <option value="BAC D">BAC D</option>
-                                    <option value="BAC E">BAC E</option>
-                                    <option value="BAC F">BAC F</option>
-                                    <option value="BAC G">BAC G</option>
-                                </optgroup>
-                                <optgroup label="Supérieur">
-                                    <option value="Université">Université</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Matière</label>
-                            <input type="text" id="adminSubject" required placeholder="Ex: Maths" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
-                        </div>
-                    </div>
-
-                    <!-- CHOIX FICHIER DEPUIS LA GALERIE / FICHIERS -->
-                    <div class="border-t border-b py-2 space-y-2">
-                        <label class="block text-xs font-semibold text-slate-700">Fichier PDF / Image (Téléphone / Galerie)</label>
-                        <input type="file" id="adminFileInput" accept="application/pdf,image/*" onchange="handleFileUpload(event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                        <p id="fileStatus" class="text-[11px] text-slate-400 italic">Ou vous pouvez aussi coller un lien ci-dessous :</p>
-                        <input type="url" id="adminSubjectUrl" placeholder="Lien URL (optionnel)" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
-                    </div>
-
-                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-sm shadow mt-2">
-                        + Enregistrer l'épreuve
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- SCRIPT JAVASCRIPT -->
     <script>
-        const ADMIN_PASSWORD = "Mohamed12";
-
-        const defaultDocs = [
-            { id: 1, title: "Mathématiques BAC D 2023", level: "BAC D", subject: "Mathématiques", subjectUrl: "#" },
-            { id: 2, title: "PCT BEPC 2023", level: "BEPC", subject: "PCT", subjectUrl: "#" }
-        ];
-
-        let documents = JSON.parse(localStorage.getItem('exam_docs')) || defaultDocs;
-        let selectedDoc = null;
-        let uploadedFileDataUrl = "";
-
-        function saveDocs() {
-            localStorage.setItem('exam_docs', JSON.stringify(documents));
-        }
-
-        // Gestion de l'importation de fichier local (Galerie / Fichiers)
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedFileDataUrl = e.target.result;
-                document.getElementById('fileStatus').innerText = "✓ Fichier sélectionné : " + file.name;
-                document.getElementById('fileStatus').className = "text-[11px] text-emerald-600 font-bold";
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function renderDocs(list) {
-            const container = document.getElementById('gridContainer');
-            if(!container) return;
-            container.innerHTML = '';
-
-            if (list.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 text-sm">Aucune épreuve trouvée.</div>';
-                return;
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
             }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-8">
 
-            list.forEach(doc => {
-                const card = `
-                    <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col justify-between shadow-sm">
-                        <div>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${doc.level}</span>
-                            <h3 class="font-bold text-slate-800 text-sm mt-2 mb-1">${doc.title}</h3>
-                            <p class="text-xs text-slate-500 mb-3">${doc.subject}</p>
-                        </div>
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- En-tête -->
+        <header class="glass-card p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <h1 class="text-2xl font-extrabold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">Studio IA Creator</h1>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Générez des scripts viraux, des accroches puissantes et des stratégies d'engagement pour TikTok & Reels.</p>
+            </div>
+            <span class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs rounded-full font-medium flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Moteur IA Moteur Actif
+            </span>
+        </header>
 
-                        <button type="button" onclick="openPaymentModal(${doc.id})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-lg transition flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-download"></i> Télécharger (Dépôt)
+        <!-- Grille Principale -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Panneau de Configuration (Gauche) -->
+            <div class="lg:col-span-5 glass-card p-6 rounded-2xl space-y-5">
+                <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-400"></i> Paramètres du Contenu
+                </h2>
+
+                <!-- Type d'outil -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Mode de Génération</label>
+                    <select id="mode-select" onchange="toggleModeFields()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="script">🎬 Script Vidéo Complet + Hook</option>
+                        <option value="hooks">🪝 5 Accroches (Hooks) Virales</option>
+                        <option value="engagement">💬 Questions & Commentaires d'Engagement</option>
+                        <option value="hashtags">🏷️ Hashtags & Mots-clés SEO</option>
+                    </select>
+                </div>
+
+                <!-- Sujet principal -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Sujet ou Niche de la vidéo</label>
+                    <textarea id="input-topic" rows="3" placeholder="ex: 3 erreurs à éviter absolument quand on débute le sport à la maison..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 placeholder-slate-500"></textarea>
+                </div>
+
+                <!-- Ton -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Style / Ton</label>
+                    <select id="input-tone" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <option value="dynamique et captivant">⚡ Dynamique & Énergique</option>
+                        <option value="intrigant et mystérieux">🕵️ Intrigant & Mystérieux</option>
+                        <option value="éducatif et accessible">🎓 Éducatif & Concis</option>
+                        <option value="humoristique et décalé">😂 Humoristique & Décalé</option>
+                    </select>
+                </div>
+
+                <!-- Bouton d'action -->
+                <button onclick="generateContent()" id="submit-btn" class="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 rounded-xl font-bold text-sm text-white shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-sparkles"></i>
+                    <span>GÉNÉRER AVEC L'IA</span>
+                </button>
+            </div>
+
+            <!-- Zone de Résultat (Droite) -->
+            <div class="lg:col-span-7 glass-card p-6 rounded-2xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-square-poll-vertical text-purple-400"></i> Résultat Structuré
+                        </h2>
+                        <button onclick="copyResult()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+                            <i class="fa-solid fa-copy"></i> Copier
                         </button>
                     </div>
-                `;
-                container.innerHTML += card;
-            });
+
+                    <!-- Zone de texte de sortie -->
+                    <div id="output-container" class="bg-slate-900/90 rounded-xl p-4 text-xs font-mono text-slate-300 min-h-[350px] max-h-[500px] overflow-y-auto whitespace-pre-wrap border border-slate-800 leading-relaxed">
+Cliquez sur "GÉNÉRER AVEC L'IA" pour obtenir vos idées de contenu optimisées pour captiver l'algorithme.
+                    </div>
+                </div>
+
+                <!-- Pied de page résultat -->
+                <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-[11px] text-slate-500">
+                    <span>Format optimisé pour les 3 premières secondes (FYP TikTok / Shorts)</span>
+                    <span id="char-count">0 caractères</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 z-50">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-text" class="text-sm font-medium">Copié dans le presse-papier !</span>
+    </div>
+
+    <script>
+        const apiKey = ""; // Clé runtime Gemini
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
         }
 
-        function filterDocs() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const level = document.getElementById('levelFilter').value;
-
-            const filtered = documents.filter(doc => {
-                const matchesSearch = doc.title.toLowerCase().includes(search) || doc.subject.toLowerCase().includes(search);
-                const matchesLevel = level === 'ALL' || doc.level === level;
-                return matchesSearch && matchesLevel;
-            });
-
-            renderDocs(filtered);
+        function copyResult() {
+            const text = document.getElementById('output-container').innerText;
+            navigator.clipboard.writeText(text);
+            showToast("Texte copié !");
         }
 
-        function openPaymentModal(id) {
-            selectedDoc = documents.find(d => d.id === id);
-            document.getElementById('modalDocTitle').innerText = selectedDoc.title;
-            document.getElementById('paymentModal').style.display = 'flex';
-            document.getElementById('paymentModal').classList.remove('hidden');
-        }
+        async function generateContent() {
+            const mode = document.getElementById('mode-select').value;
+            const topic = document.getElementById('input-topic').value.trim();
+            const tone = document.getElementById('input-tone').value;
+            const output = document.getElementById('output-container');
+            const btn = document.getElementById('submit-btn');
 
-        function confirmPayment(event) {
-            event.preventDefault();
-            const refTxn = document.getElementById('transactionId').value.trim();
-
-            if (refTxn.length < 5) {
-                alert("Veuillez saisir une référence SMS de dépôt valide.");
+            if (!topic) {
+                showToast("Veuillez indiquer un sujet d'abord.");
                 return;
             }
 
-            alert("Dépôt validé avec la référence SMS : " + refTxn + "\n\nOuverture de l'épreuve en cours...");
-            closeModal('paymentModal');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Génération en cours...`;
+            output.innerText = "Création du contenu optimisé par l'IA...";
 
-            if (selectedDoc.subjectUrl && selectedDoc.subjectUrl !== '#') {
-                if (selectedDoc.subjectUrl.startsWith('data:')) {
-                    const win = window.open();
-                    win.document.write('<iframe src="' + selectedDoc.subjectUrl + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
-                } else {
-                    window.open(selectedDoc.subjectUrl, '_blank');
+            // Prompts spécialisés selon le mode
+            let systemPrompt = "Tu es un expert mondial en création de contenu court et viral sur TikTok, Instagram Reels et YouTube Shorts.";
+            let userPrompt = "";
+
+            if (mode === 'script') {
+                userPrompt = `Rédige un script court (30 à 45 secondes) sur : "${topic}".
+Ton de la vidéo : ${tone}.
+Structure obligatoire :
+1. HOOK (Accroche visuelle et textuelle dans les 3 premières secondes).
+2. DÉVELOPPEMENT (2 ou 3 points clés très rapides).
+3. CALL TO ACTION (CTA pour inciter aux commentaires ou au partage).
+4. HASHTAGS (5 hashtags viraux pertinents).`;
+            } else if (mode === 'hooks') {
+                userPrompt = `Donne-moi 5 variantes d'ACCROCHES (Hooks) ultra-captivantes pour démarrer une vidéo sur : "${topic}".
+Ton : ${tone}.
+Ces accroches doivent stopper le scroll des utilisateurs dans la première seconde.`;
+            } else if (mode === 'engagement') {
+                userPrompt = `Pour une vidéo traitant de : "${topic}".
+Génère :
+- 3 questions à poser dans la vidéo pour forcer les spectateurs à répondre en commentaire.
+- 5 exemples de commentaires que l'auteur peut épingler pour lancer le débat.`;
+            } else if (mode === 'hashtags') {
+                userPrompt = `Donne une liste optimisée SEO pour TikTok/Reels sur le sujet : "${topic}".
+Comprends :
+- 10 Hashtags ciblés (mélange de tendance et de niche).
+- 5 Mots-clés stratégiques à inclure dans la description.`;
+            }
+
+            let retries = 0;
+            const delays = [1000, 2000, 4000];
+
+            async function fetchGemini() {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: userPrompt }] }],
+                            systemInstruction: { parts: [{ text: systemPrompt }] }
+                        })
+                    });
+
+                    if (!response.ok) throw new Error("Erreur serveur");
+
+                    const data = await response.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucune réponse générée.";
+                    
+                    output.innerText = text;
+                    document.getElementById('char-count').innerText = `${text.length} caractères`;
+                    showToast("Génération réussie !");
+                } catch (err) {
+                    if (retries < delays.length) {
+                        await new Promise(r => setTimeout(r, delays[retries++]));
+                        return fetchGemini();
+                    }
+                    output.innerText = "Erreur lors de la génération. Veuillez réessayer.";
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-sparkles"></i> <span>GÉNÉRER AVEC L'IA</span>`;
                 }
-            } else {
-                window.open('https://www.w3.org/W3C/DesignIssues/diagrams/pdf.pdf', '_blank');
             }
+
+            fetchGemini();
         }
-
-        function openAdminModal() {
-            document.getElementById('adminAuthSection').classList.remove('hidden');
-            document.getElementById('adminContentSection').classList.add('hidden');
-            document.getElementById('adminPassInput').value = '';
-
-            const modal = document.getElementById('adminModal');
-            if(modal) {
-                modal.style.display = 'flex';
-                modal.classList.remove('hidden');
-            }
-        }
-
-        function verifyAdminPassword(event) {
-            event.preventDefault();
-            const inputPass = document.getElementById('adminPassInput').value;
-            if (inputPass === ADMIN_PASSWORD) {
-                document.getElementById('adminAuthSection').classList.add('hidden');
-                document.getElementById('adminContentSection').classList.remove('hidden');
-            } else {
-                alert("Mot de passe incorrect.");
-            }
-        }
-
-        function addNewDoc(event) {
-            event.preventDefault();
-            
-            let docUrl = uploadedFileDataUrl || document.getElementById('adminSubjectUrl').value || '#';
-
-            const newDoc = {
-                id: Date.now(),
-                title: document.getElementById('adminTitle').value,
-                level: document.getElementById('adminLevel').value,
-                subject: document.getElementById('adminSubject').value,
-         
+    </script>
+</body>
+</html>
