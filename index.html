@@ -1,230 +1,410 @@
+#!/bin/bash
+
+echo "🚀 [1/3] Initialisation du projet et installation des dépendances..."
+
+# Initialiser package.json s'il n'existe pas
+if [ ! -f package.json ]; then
+    npm init -y
+fi
+
+# Installer les dépendances nécessaires
+npm install express sqlite3 cors axios stripe dotenv
+
+echo "📝 [2/3] Création du fichier server.js..."
+
+# Génération automatique du fichier server.js
+cat << 'EOF' > server.js
+require('dotenv').config();
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+const axios = require('axios');
+const Stripe = require('stripe');
+
+const app = express();
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock_key');
+
+app.use(cors());
+app.use(express.json());
+
+// ----------------------------------------------------
+// 1. Initialisation de la Base de Données SQLite
+// ----------------------------------------------------
+const db = new sqlite3.Database('./database.db', (err) => {
+    if (err) console.error('Erreur BDD:', err.message);
+    else console.log('Base de données SQLite connectée.');
+});
+
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        balance REAL DEFAULT 142.80
+    )`);
+
+    db.run(`INSERT OR IGNORE INTO users (id, email, balance) VALUES (1, 'demo@boostvite.com', 142.80)`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        service_id INTEGER,
+        service_name TEXT,
+        link TEXT,
+        quantity INTEGER,
+        price REAL,
+        status TEXT DEFAULT 'En attente',
+        api_order_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+});
+
+// ----------------------------------------------------
+// 2. Endpoints API (Backend)
+// ----------------------------------------------------
+
+app.get('/api/user/:id', (req, res) => {
+    db.get('SELECT id, email, balance FROM users WHERE id = ?', [req.params.id], (err, user) => {
+        if (err || !user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+        res.json(user);
+    });
+});
+
+app.get('/api/orders/user/:userId', (req, res) => {
+    db.all('SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC', [req.params.userId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/orders/create', async (req, res) => {
+    const { userId, serviceId, serviceName, link, quantity, price } = req.body;
+
+    db.get('SELECT balance FROM users WHERE id = ?', [userId], async (err, user) => {
+        if (err || !user) return res.status(400).json({ error: 'Utilisateur introuvable' });
+        if (user.balance < price) return res.status(400).json({ error: 'Solde insuffisant' });
+
+        try {
+            let providerOrderId = null;
+
+            if (process.env.SMM_PROVIDER_API_KEY) {
+                const response = await axios.post(process.env.SMM_PROVIDER_URL, new URLSearchParams({
+                    key: process.env.SMM_PROVIDER_API_KEY,
+                    action: 'add',
+                    service: serviceId,
+                    link: link,
+                    quantity: quantity
+                }));
+                
+                if (response.data && response.data.order) {
+                    providerOrderId = response.data.order;
+                }
+            }
+
+            const newBalance = user.balance - price;
+            db.run('UPDATE users SET balance = ? WHERE id = ?', [newBalance, userId]);
+
+            db.run(
+                `INSERT INTO orders (user_id, service_id, service_name, link, quantity, price, api_order_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [userId, serviceId, serviceName, link, quantity, price, providerOrderId],
+                function(err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({
+                        success: true,
+                        orderId: this.lastID,
+                        newBalance: newBalance,
+                        providerOrderId: providerOrderId
+                    });
+                }
+            );
+
+        } catch (apiError) {
+            console.error('Erreur API Fournisseur:', apiError.message);
+            res.status(500).json({ error: 'Erreur de transmission au fournisseur SMM' });
+        }
+    });
+});
+
+app.post('/api/payments/create-checkout-session', async (req, res) => {
+    const { amount, userId } = req.body;
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: 'Recharge Solde BoostVite' },
+                    unit_amount: Math.round(amount * 100),
+                },
+                quantity: 1,
+            }],
+            mode: 'payment',
+            success_url: `http://localhost:3000/?payment=success`,
+            cancel_url: `http://localhost:3000/?payment=cancel`,
+            metadata: { userId, amount }
+        });
+        res.json({ id: session.id, url: session.url });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ----------------------------------------------------
+// 3. Frontend HTML/JS Embarqué
+// ----------------------------------------------------
+app.get('/', (req, res) => {
+    res.send(`
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio IA - Assistant de Contenu Viral</title>
+    <title>BoostVite - Panneau SMM Tout-en-un</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        brand: {
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                        }
-                    }
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: { 500: '#6366f1', 600: '#4f46e5' } }
                 }
             }
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .glass-card {
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-8">
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-x-hidden">
 
-    <div class="max-w-5xl mx-auto space-y-6">
-        
-        <!-- En-tête -->
-        <header class="glass-card p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    </div>
-                    <h1 class="text-2xl font-extrabold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">Studio IA Creator</h1>
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between hidden md:flex">
+        <div>
+            <div class="flex items-center space-x-3 mb-8">
+                <div class="bg-gradient-to-tr from-brand-600 to-violet-500 p-2.5 rounded-xl text-white font-black text-2xl flex items-center justify-center w-11 h-11">⚡</div>
+                <div>
+                    <span class="font-extrabold text-xl text-white">BoostVite</span>
+                    <span class="text-[10px] block font-semibold text-brand-500 uppercase">SMM Portal</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">Générez des scripts viraux, des accroches puissantes et des stratégies d'engagement pour TikTok & Reels.</p>
             </div>
-            <span class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs rounded-full font-medium flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Moteur IA Moteur Actif
-            </span>
-        </header>
 
-        <!-- Grille Principale -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            <!-- Panneau de Configuration (Gauche) -->
-            <div class="lg:col-span-5 glass-card p-6 rounded-2xl space-y-5">
-                <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-indigo-400"></i> Paramètres du Contenu
-                </h2>
-
-                <!-- Type d'outil -->
+            <div class="px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-2xl mb-6 flex items-center justify-between">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Mode de Génération</label>
-                    <select id="mode-select" onchange="toggleModeFields()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="script">🎬 Script Vidéo Complet + Hook</option>
-                        <option value="hooks">🪝 5 Accroches (Hooks) Virales</option>
-                        <option value="engagement">💬 Questions & Commentaires d'Engagement</option>
-                        <option value="hashtags">🏷️ Hashtags & Mots-clés SEO</option>
-                    </select>
+                    <p class="text-xs text-slate-400">Solde Actuel</p>
+                    <span id="user-balance" class="text-lg font-bold text-emerald-400">$0.00</span>
                 </div>
+                <button onclick="openAddFundsModal()" class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs hover:bg-emerald-500/20"><i class="fa-solid fa-plus"></i></button>
+            </div>
 
-                <!-- Sujet principal -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Sujet ou Niche de la vidéo</label>
-                    <textarea id="input-topic" rows="3" placeholder="ex: 3 erreurs à éviter absolument quand on débute le sport à la maison..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 placeholder-slate-500"></textarea>
-                </div>
-
-                <!-- Ton -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Style / Ton</label>
-                    <select id="input-tone" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500">
-                        <option value="dynamique et captivant">⚡ Dynamique & Énergique</option>
-                        <option value="intrigant et mystérieux">🕵️ Intrigant & Mystérieux</option>
-                        <option value="éducatif et accessible">🎓 Éducatif & Concis</option>
-                        <option value="humoristique et décalé">😂 Humoristique & Décalé</option>
-                    </select>
-                </div>
-
-                <!-- Bouton d'action -->
-                <button onclick="generateContent()" id="submit-btn" class="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 rounded-xl font-bold text-sm text-white shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-sparkles"></i>
-                    <span>GÉNÉRER AVEC L'IA</span>
+            <nav class="space-y-2">
+                <button onclick="openNewOrderModal()" class="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold bg-brand-600 text-white shadow-lg shadow-brand-600/30 hover:bg-brand-500 transition">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span>Nouvelle Commande</span>
                 </button>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div>
+                <h1 class="text-2xl font-extrabold text-white">Tableau de bord des commandes</h1>
+                <p class="text-sm text-slate-400">Suivi et gestion en direct.</p>
             </div>
-
-            <!-- Zone de Résultat (Droite) -->
-            <div class="lg:col-span-7 glass-card p-6 rounded-2xl flex flex-col justify-between">
-                <div>
-                    <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
-                        <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-square-poll-vertical text-purple-400"></i> Résultat Structuré
-                        </h2>
-                        <button onclick="copyResult()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
-                            <i class="fa-solid fa-copy"></i> Copier
-                        </button>
-                    </div>
-
-                    <!-- Zone de texte de sortie -->
-                    <div id="output-container" class="bg-slate-900/90 rounded-xl p-4 text-xs font-mono text-slate-300 min-h-[350px] max-h-[500px] overflow-y-auto whitespace-pre-wrap border border-slate-800 leading-relaxed">
-Cliquez sur "GÉNÉRER AVEC L'IA" pour obtenir vos idées de contenu optimisées pour captiver l'algorithme.
-                    </div>
-                </div>
-
-                <!-- Pied de page résultat -->
-                <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-[11px] text-slate-500">
-                    <span>Format optimisé pour les 3 premières secondes (FYP TikTok / Shorts)</span>
-                    <span id="char-count">0 caractères</span>
-                </div>
-            </div>
-
+            <button onclick="openNewOrderModal()" class="px-4 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-brand-600/30 hover:bg-brand-500">
+                + Nouvelle Commande
+            </button>
         </div>
 
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-950 text-xs text-slate-400 uppercase border-b border-slate-800">
+                        <th class="py-3 px-4">ID</th>
+                        <th class="py-3 px-4">Date</th>
+                        <th class="py-3 px-4">Service</th>
+                        <th class="py-3 px-4">Lien</th>
+                        <th class="py-3 px-4">Quantité</th>
+                        <th class="py-3 px-4">Prix</th>
+                        <th class="py-3 px-4">Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-tbody" class="divide-y divide-slate-800 text-sm"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal Commande -->
+    <div id="modal-new-order" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
+            <h3 class="font-bold text-lg text-white">Passer une Commande</h3>
+            <form onsubmit="handleNewOrderSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Catégorie</label>
+                    <select id="order-category" onchange="updateServicesDropdown()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+                        <option value="tiktok">TikTok - Vues & Abonnés</option>
+                        <option value="instagram">Instagram - Followers & Likes</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Service</label>
+                    <select id="order-service" onchange="calculatePrice()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Lien Cible</label>
+                    <input type="url" id="order-link" required placeholder="https://tiktok.com/@votre_compte" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Quantité</label>
+                    <input type="number" id="order-quantity" value="1000" min="100" oninput="calculatePrice()" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+                </div>
+                <div class="p-4 bg-slate-950 rounded-xl flex justify-between items-center">
+                    <span class="text-xs text-slate-400">Total :</span>
+                    <span id="order-total-price" class="text-xl font-bold text-brand-500">$0.00</span>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeNewOrderModal()" class="px-4 py-2 text-slate-400">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-600 text-white font-bold rounded-xl shadow-lg">Confirmer</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 z-50">
-        <i class="fa-solid fa-circle-check"></i>
-        <span id="toast-text" class="text-sm font-medium">Copié dans le presse-papier !</span>
+    <!-- Modal Solde -->
+    <div id="modal-add-funds" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <h3 class="font-bold text-lg text-white">Recharger votre solde</h3>
+            <div>
+                <label class="block text-xs text-slate-300 mb-1">Montant ($)</label>
+                <input type="number" id="funds-amount" value="50" min="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeAddFundsModal()" class="px-4 py-2 text-slate-400">Annuler</button>
+                <button onclick="triggerStripePayment()" class="px-5 py-2 bg-emerald-600 text-white font-bold rounded-xl">Payer avec Stripe</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const apiKey = ""; // Clé runtime Gemini
+        const CURRENT_USER_ID = 1;
+        const servicesData = {
+            tiktok: [
+                { id: 201, name: "TikTok Vues [1M/jour]", rate: 0.05 },
+                { id: 202, name: "TikTok Abonnés Haute Qualité", rate: 4.20 }
+            ],
+            instagram: [
+                { id: 101, name: "Instagram Followers - Haute Qualité", rate: 2.50 },
+                { id: 102, name: "Instagram Likes Rapides", rate: 0.80 }
+            ]
+        };
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-text').innerText = msg;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        async function loadUserData() {
+            const res = await fetch(\`/api/user/\${CURRENT_USER_ID}\`);
+            const user = await res.json();
+            if (user && user.balance !== undefined) {
+                document.getElementById('user-balance').innerText = \`$\${user.balance.toFixed(2)}\`;
+            }
         }
 
-        function copyResult() {
-            const text = document.getElementById('output-container').innerText;
-            navigator.clipboard.writeText(text);
-            showToast("Texte copié !");
+        async function loadOrders() {
+            const res = await fetch(\`/api/orders/user/\${CURRENT_USER_ID}\`);
+            const orders = await res.json();
+            const tbody = document.getElementById('orders-tbody');
+            tbody.innerHTML = '';
+
+            orders.forEach(o => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = \`
+                    <td class="py-3 px-4 font-mono text-brand-500 font-bold">#\${o.id}</td>
+                    <td class="py-3 px-4 text-xs text-slate-400">\${o.created_at}</td>
+                    <td class="py-3 px-4 text-slate-200">\${o.service_name}</td>
+                    <td class="py-3 px-4 text-indigo-400 max-w-xs truncate"><a href="\${o.link}" target="_blank">\${o.link}</a></td>
+                    <td class="py-3 px-4 font-bold text-slate-200">\${o.quantity}</td>
+                    <td class="py-3 px-4 text-slate-100 font-bold">\$\${o.price.toFixed(2)}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-semibold bg-brand-500/20 text-brand-400">\${o.status}</span></td>
+                \`;
+                tbody.appendChild(tr);
+            });
         }
 
-        async function generateContent() {
-            const mode = document.getElementById('mode-select').value;
-            const topic = document.getElementById('input-topic').value.trim();
-            const tone = document.getElementById('input-tone').value;
-            const output = document.getElementById('output-container');
-            const btn = document.getElementById('submit-btn');
-
-            if (!topic) {
-                showToast("Veuillez indiquer un sujet d'abord.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Génération en cours...`;
-            output.innerText = "Création du contenu optimisé par l'IA...";
-
-            // Prompts spécialisés selon le mode
-            let systemPrompt = "Tu es un expert mondial en création de contenu court et viral sur TikTok, Instagram Reels et YouTube Shorts.";
-            let userPrompt = "";
-
-            if (mode === 'script') {
-                userPrompt = `Rédige un script court (30 à 45 secondes) sur : "${topic}".
-Ton de la vidéo : ${tone}.
-Structure obligatoire :
-1. HOOK (Accroche visuelle et textuelle dans les 3 premières secondes).
-2. DÉVELOPPEMENT (2 ou 3 points clés très rapides).
-3. CALL TO ACTION (CTA pour inciter aux commentaires ou au partage).
-4. HASHTAGS (5 hashtags viraux pertinents).`;
-            } else if (mode === 'hooks') {
-                userPrompt = `Donne-moi 5 variantes d'ACCROCHES (Hooks) ultra-captivantes pour démarrer une vidéo sur : "${topic}".
-Ton : ${tone}.
-Ces accroches doivent stopper le scroll des utilisateurs dans la première seconde.`;
-            } else if (mode === 'engagement') {
-                userPrompt = `Pour une vidéo traitant de : "${topic}".
-Génère :
-- 3 questions à poser dans la vidéo pour forcer les spectateurs à répondre en commentaire.
-- 5 exemples de commentaires que l'auteur peut épingler pour lancer le débat.`;
-            } else if (mode === 'hashtags') {
-                userPrompt = `Donne une liste optimisée SEO pour TikTok/Reels sur le sujet : "${topic}".
-Comprends :
-- 10 Hashtags ciblés (mélange de tendance et de niche).
-- 5 Mots-clés stratégiques à inclure dans la description.`;
-            }
-
-            let retries = 0;
-            const delays = [1000, 2000, 4000];
-
-            async function fetchGemini() {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: userPrompt }] }],
-                            systemInstruction: { parts: [{ text: systemPrompt }] }
-                        })
-                    });
-
-                    if (!response.ok) throw new Error("Erreur serveur");
-
-                    const data = await response.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucune réponse générée.";
-                    
-                    output.innerText = text;
-                    document.getElementById('char-count').innerText = `${text.length} caractères`;
-                    showToast("Génération réussie !");
-                } catch (err) {
-                    if (retries < delays.length) {
-                        await new Promise(r => setTimeout(r, delays[retries++]));
-                        return fetchGemini();
-                    }
-                    output.innerText = "Erreur lors de la génération. Veuillez réessayer.";
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fa-solid fa-sparkles"></i> <span>GÉNÉRER AVEC L'IA</span>`;
-                }
-            }
-
-            fetchGemini();
+        function updateServicesDropdown() {
+            const cat = document.getElementById('order-category').value;
+            const select = document.getElementById('order-service');
+            select.innerHTML = '';
+            servicesData[cat].forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.innerText = \`\${s.name} - $\${s.rate.toFixed(2)}/1000\`;
+                opt.dataset.rate = s.rate;
+                select.appendChild(opt);
+            });
+            calculatePrice();
         }
+
+        function calculatePrice() {
+            const select = document.getElementById('order-service');
+            const opt = select.options[select.selectedIndex];
+            const rate = opt ? parseFloat(opt.dataset.rate) : 0;
+            const qty = parseInt(document.getElementById('order-quantity').value) || 0;
+            document.getElementById('order-total-price').innerText = \`$\${((qty / 1000) * rate).toFixed(2)}\`;
+        }
+
+        async function handleNewOrderSubmit(e) {
+            e.preventDefault();
+            const select = document.getElementById('order-service');
+            const opt = select.options[select.selectedIndex];
+            
+            const payload = {
+                userId: CURRENT_USER_ID,
+                serviceId: select.value,
+                serviceName: opt.innerText.split(' - $')[0],
+                link: document.getElementById('order-link').value,
+                quantity: parseInt(document.getElementById('order-quantity').value),
+                price: parseFloat(document.getElementById('order-total-price').innerText.replace('$', ''))
+            };
+
+            const res = await fetch('/api/orders/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                closeNewOrderModal();
+                loadUserData();
+                loadOrders();
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        }
+
+        async function triggerStripePayment() {
+            const amount = parseFloat(document.getElementById('funds-amount').value);
+            const res = await fetch('/api/payments/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount, userId: CURRENT_USER_ID })
+            });
+            const data = await res.json();
+            if (data.url) window.location.href = data.url;
+        }
+
+        function openNewOrderModal() { updateServicesDropdown(); document.getElementById('modal-new-order').classList.remove('hidden'); }
+        function closeNewOrderModal() { document.getElementById('modal-new-order').classList.add('hidden'); }
+        function openAddFundsModal() { document.getElementById('modal-add-funds').classList.remove('hidden'); }
+        function closeAddFundsModal() { document.getElementById('modal-add-funds').classList.add('hidden'); }
+
+        window.onload = () => { loadUserData(); loadOrders(); };
     </script>
 </body>
 </html>
+    `);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`\n✅ L'application est en ligne sur : http://localhost:${PORT}`);
+});
+EOF
+
+echo "⚡ [3/3] Démarrage de l'application..."
+node server.js
+    
